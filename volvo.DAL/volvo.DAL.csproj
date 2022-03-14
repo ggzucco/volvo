@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\volvo.Shared.csproj" />
+    <ProjectReference Include="..\volvo.DBC\volvo.DBC.csproj" />
+    <ProjectReference Include="..\volvo.DBI\volvo.DBI.csproj" />
+  </ItemGroup>
+
+</Project>

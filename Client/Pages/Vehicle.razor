@@ -1,0 +1,81 @@
+﻿@page "/vehicle"
+@using volvo.Shared
+@using volvo.Client.Components;
+@inject HttpClient Http
+@inject NavigationManager navigation
+
+<PageTitle>Vehicles</PageTitle>
+
+<h1>Vehicles</h1>
+
+<button class="btn btn-primary btn-lg oi oi-plus" @onclick="@(()=> OpenItemPage(0))" > NEW</button>
+<br />
+<br />
+
+@if (vehicles == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Model</th>
+                <th>Model Year</th>
+                <th>Manufacturing Date</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var vehicle in vehicles)
+            {
+                <tr>
+                    <td>@vehicle.Model?.NameModelVehicle</td>
+                    <td>@vehicle.YearModel</td>
+                    <td>@vehicle.YearManufacturing</td>
+                    <td><button class="btn btn-outline-dark oi oi-transfer" @onclick="@(()=> OpenItemPage(vehicle.IdVehicle))"></button></td>
+                    <td><button class="btn btn-outline-danger oi oi-trash" @onclick="@(()=> OnDelete(vehicle.IdVehicle))"></button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<MessageBox @ref="deleteMessageBox" OnCancel="messageBoxOnCancel" OnConfirm="messageBoxOnConfirm">
+    <div>Do you want delete this item?</div>
+</MessageBox>
+
+@code {
+    MessageBox deleteMessageBox = new MessageBox();
+    private VehicleShared[]? vehicles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        vehicles = await Http.GetFromJsonAsync<VehicleShared[]>("Vehicle");
+    }
+
+    private void OpenItemPage(Int64 id) => navigation.NavigateTo($"vehicleitem/{id}");
+
+    private void OnDelete(Int64 Id)
+    {
+        deleteMessageBox.ShowActionMessage(Id);        
+    }
+
+    #region messagebox
+
+    void messageBoxOnCancel()
+    {
+        deleteMessageBox.Close();
+    }
+
+    async Task messageBoxOnConfirm()
+    {
+        await Http.DeleteAsync($"Vehicle/{deleteMessageBox.Id}");
+        deleteMessageBox.Close();
+        vehicles = await Http.GetFromJsonAsync<VehicleShared[]>("Vehicle");
+    }
+    #endregion messagebox
+
+}

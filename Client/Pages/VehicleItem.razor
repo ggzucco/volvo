@@ -1,0 +1,150 @@
+﻿@page "/vehicleitem/{idvehicle:long}"
+@using volvo.Shared
+@using volvo.Client.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+@inject HttpClient Http
+@inject NavigationManager navigation
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Vehicles</PageTitle>
+
+<h1>Vehicles</h1>
+
+
+<form>          
+    <div class="form-group">
+        <label for="fmodel">Model</label>
+        <select @bind="vehicle.IdModelVehicle" class="form-control" name="fmodel" id="fmodel">
+            @if(models != null)
+                @foreach (var model in models)
+                {
+                    <option value=@model.IdModelVehicle.ToString()>@model.NameModelVehicle</option>   
+                }
+        </select>
+
+        <br />
+    </div>
+    <div class="form-group">
+        <label for="fyearmodel">Model (Year)</label>
+        <input @bind-value="vehicle.YearModel" class="form-control" type="number" id="fyearmodel" name="fyearmodel" min="1000" max="9999"  />
+        <br />
+    </div>
+    <div class="form-group"> 
+        <label for="fyearmanufacturing">Manufacturing (Year)</label>
+        <input @bind-value="vehicle.YearManufacturing" class="form-control" type="number" id="fyearmanufacturing" name="fyearmanufacturing" min="1000" max="9999" />
+        <br />
+    </div>         
+    <div class="form-group">
+        <button class="btn btn-primary btn-lg oi oi-arrow-top" @onclick="OnSave"> Save</button>
+        <br />
+    </div>
+    <div class="form-group">
+        <button class="btn btn-danger  btn-lg oi oi-arrow-left" @onclick="OnCancel"> Back</button>
+    </div>
+</form>
+
+<MessageBox @ref="updateMessageBox" OnCancel="messageBoxOnCancel" OnConfirm="messageBoxOnConfirm">
+    <div>@message </div>
+</MessageBox>
+
+
+@code {
+    public VehicleShared VehicleShared { get; set; }
+    private ModelVehicleShared[]? models;
+    private ModelVehicleShared model;
+    private VehicleShared vehicle;
+    MessageBox updateMessageBox = new MessageBox();
+    string message = String.Empty;
+
+    [Parameter]
+    public Int64 idvehicle { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = new ModelVehicleShared();
+        vehicle = new VehicleShared();
+
+        models = await Http.GetFromJsonAsync<ModelVehicleShared[]>("ModelVehicle");
+
+        if(idvehicle < 1 )
+        {
+            vehicle.YearManufacturing = DateTime.Now.Year;
+            vehicle.YearModel = DateTime.Now.Year;
+        }
+        else
+        {
+            vehicle = await Http.GetFromJsonAsync<VehicleShared>($"Vehicle/{idvehicle}");
+        }
+    }
+
+    private void OnCancel()
+    {           
+        navigation.NavigateTo("vehicle");
+    }
+
+    private void OnSave()
+    {
+        if(OnValidate())
+        {
+            Task.Run( () => Save());
+            message = "Saved";
+        }
+
+        updateMessageBox.ShowMessage();
+    }
+
+    private Boolean OnValidate()
+    {
+        List<String> messages = new List<String>();
+
+        if(vehicle.IdModelVehicle <= 0)
+        {
+            messages.Add(@"* Please select a model");
+        }
+        if(vehicle.IdVehicle < 1)
+        {
+            if(vehicle.YearManufacturing != Int32.Parse(DateTime.Now.Year.ToString()))
+            {
+                messages.Add(@"* The Manufacturing (Year) must to be this year for new vehicles");
+            }
+            if(vehicle.YearModel != Int32.Parse(DateTime.Now.Year.ToString()) ||
+                vehicle.YearModel != Int32.Parse(DateTime.Now.Year.ToString() + 1))
+            {
+                messages.Add(@"* The Model (Year) can only be from this year or subsequent");
+            }            
+        }
+
+        if(messages.Count > 0)
+        {
+            message = string.Empty;
+            foreach(var item in messages)
+            {
+                message += item + "<br />";
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    async Task Save()
+    {
+        await Http.PostAsJsonAsync("Vehicle", vehicle);
+        
+    }
+
+    #region messagebox
+
+    void messageBoxOnCancel()
+    {
+        updateMessageBox.Close();
+    }
+
+    async Task messageBoxOnConfirm()
+    {
+        updateMessageBox.Close();
+    }
+    #endregion messagebox
+
+}
